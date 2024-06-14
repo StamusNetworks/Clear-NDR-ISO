@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Copyright Stamus Networks
+# Copyright Stamus Networks, 2024
 # All rights reserved
 # Debian Live/Install ISO script - oss@stamus-networks.com
 #
-# Please RUN ON Debian Bullseye only !!!
+# Please RUN ON Debian Bookworm only !!!
 
 set -e
 
@@ -14,9 +14,9 @@ cat << EOF
 
 usage: $0 options
 
-###################################
-#!!! RUN on Debian Bullseye ONLY !!!#
-###################################
+#####################################
+#!!! RUN on Debian Bookworm ONLY !!!#
+#####################################
 
 SELKS build your own ISO options
 
@@ -25,35 +25,35 @@ OPTIONS:
    -g      GUI option - can be "no-desktop"
    -p      Add package(s) to the build - can be one-package or "package1 package2 package3...." (should be confined to up to 10 packages)
    -k      Kernel option - can be the stable standard version of the kernel you wish to deploy - 
-           aka you can choose any kernel "3.x.x" you want.
-           Example: "4.16" or "3.19.6" or "3.18.11" 
+           aka you can choose any kernel "5.x.x" you want.
+           Example: "6.5" or "5.15.6" or "5.10.11" 
            
            More info on kernel versions and support:
            https://www.kernel.org/
            https://www.kernel.org/category/releases.html
            
    By default no options are required. The options presented here are if you wish to enable/disable/add components.
-   By default SELKS will be build with a standard Debian Stretch 64 bit distro and kernel ver 4.9+ (Stretch).
+   By default SELKS will be build with a standard Debian Bookworm 64 bit distro.
    
    EXAMPLE (default): 
    ./build-debian-live.sh 
-   The example above (is the default) will build a SELKS standard Debian Stretch 64 bit distro (with kernel ver 3.16)
+   The example above (is the default) will build a SELKS standard Debian Bookworm 64 bit distro (with kernel ver 3.16)
    
    EXAMPLE (customizations): 
    
    ./build-debian-live.sh -k 5.10 
-   The example above will build a SELKS Debian Stretch 64 bit distro with kernel ver 5.10
+   The example above will build a SELKS Debian Bookworm 64 bit distro with kernel ver 5.10
    
-   ./build-debian-live.sh -k 4.18.11 -p one-package
-   The example above will build a SELKS Debian Stretch 64 bit distro with kernel ver 4.18.11
+   ./build-debian-live.sh -k 5.15.11 -p one-package
+   The example above will build a SELKS Debian Bookworm 64 bit distro with kernel ver 5.15.11
    and add the extra package named  "one-package" to the build.
    
-   ./build-debian-live.sh -k 4.18.11 -g no-desktop -p one-package
-   The example above will build a SELKS Debian Stretch 64 bit distro, no desktop with kernel ver 4.18.11
+   ./build-debian-live.sh -k 5.15.11 -g no-desktop -p one-package
+   The example above will build a SELKS Debian Bookworm 64 bit distro, no desktop with kernel ver 5.15.11
    and add the extra package named  "one-package" to the build.
    
-   ./build-debian-live.sh -k 4.16 -g no-desktop -p "package1 package2 package3"
-   The example above will build a SELKS Debian Stretch 64 bit distro, no desktop with kernel ver 4.16
+   ./build-debian-live.sh -k 5.15 -g no-desktop -p "package1 package2 package3"
+   The example above will build a SELKS Debian Bookworm 64 bit distro, no desktop with kernel ver 4.16
    and add the extra packages named  "package1", "package2", "package3" to the build.
    
    
@@ -210,6 +210,7 @@ else
   --iso-application SELKS - Suricata Elasticsearch Logstash Kibana Scirius \
   --iso-preparer Stamus Networks \
   --iso-publisher Stamus Networks \
+  --debootstrap-options "--include=apt-transport-https,ca-certificates,openssl" \
   --iso-volume Stamus-SELKS $LB_CONFIG_OPTIONS 
 
 # If needed a "live" kernel can be specified like so.
@@ -221,8 +222,14 @@ else
 #  --linux-packages linux-image-4.9.20-stamus \
 # echo "deb http://packages.stamus-networks.com/selks5/debian-kernel/ stretch main" > config/archives/stamus-kernel.list.chroot
 
-wget -O config/archives/packages-stamus-networks-gpg.key.chroot http://packages.stamus-networks.com/packages.selks5.stamus-networks.com.gpg.key
+#wget -O config/archives/packages-stamus-networks-gpg.key.chroot http://packages.stamus-networks.com/packages.selks5.stamus-networks.com.gpg.key
 
+mkdir -p config/archives/
+mkdir -p config/includes.chroot/etc/apt/keyrings/
+echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable" > config/archives/docker.list.chroot
+curl -fsSL "https://download.docker.com/linux/debian/gpg" -o config/includes.chroot/etc/apt/keyrings/docker.asc
+chmod a+r config/includes.chroot/etc/apt/keyrings/docker.asc
+#+ sh -c chmod a+r /etc/apt/keyrings/docker.asc
 fi
 
 # Create dirs if not existing for the custom config files
@@ -271,6 +278,12 @@ cp staging/splash.png Stamus-Live-Build/config/includes.binary/isolinux/
 cp staging/wallpaper/joy-wallpaper_1920x1080.svg Stamus-Live-Build/config/includes.chroot/etc/alternatives/desktop-background
 #cp staging/wallpaper/joy-wallpaper_1920x1080.svg Stamus-Live-Build/config/includes.chroot/usr/share/xfce4/backdrops/
 
+# Copy Docker tars if building offline ISO
+if [ ! -z "$(ls -A staging/dockertars/)" ]; then
+  mkdir -p Stamus-Live-Build/config/includes.chroot/opt/selksd/pull/ 
+  cp -r staging/dockertars/*.tar Stamus-Live-Build/config/includes.chroot/opt/selksd/pull/
+fi
+
 # Copy banners
 cp staging/etc/motd Stamus-Live-Build/config/includes.chroot/etc/
 cp staging/etc/issue.net Stamus-Live-Build/config/includes.chroot/etc/
@@ -303,13 +316,13 @@ libjansson-dev libjansson4 libnss3-dev libnspr4-dev libgeoip1 libgeoip-dev
 rsync mc python3-daemon libnss3-tools curl net-tools
 python3-cryptography libgmp10 libyaml-0-2 python3-simplejson python3-pygments
 python3-yaml ssh sudo tcpdump nginx openssl jq patch  
-python3-pip debian-installer-launcher live-build apt-transport-https 
+python3-pip debian-installer-launcher live-build apt-transport-https ca-certificates
  " \
 >> Stamus-Live-Build/config/package-lists/StamusNetworks-CoreSystem.list.chroot
 
 # Add system tools packages to be installed
 echo "
-ethtool bwm-ng iptraf htop rsync tcpreplay sysstat hping3 screen ngrep 
+ethtool bwm-ng iptraf htop rsync tcpreplay sysstat hping3 screen ngrep docker-ce docker-ce-cli
 tcpflow dsniff mc python3-daemon wget curl vim bootlogd lsof libpolkit-agent-1-0  libpolkit-gobject-1-0 policykit-1 policykit-1-gnome" \
 >> Stamus-Live-Build/config/package-lists/StamusNetworks-Tools.list.chroot
 

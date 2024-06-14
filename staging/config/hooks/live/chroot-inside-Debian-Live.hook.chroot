@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Copyright Stamus Networks, 2018
+# Copyright Stamus Networks, 2024
 # All rights reserved
 # Debian Live/Install ISO script - oss@stamus-networks.com
 #
-# Please run on Debian Stretch
+# Please run on Debian Bookworm
 
 set -ex
 
@@ -22,7 +22,7 @@ echo "SELKS" > /etc/hostname
 # Enable the ssh banners
 sed -i -e 's|\#Banner \/etc\/issue\.net|Banner \/etc\/issue\.net|'  /etc/ssh/sshd_config
 
-# Edit the Icon "Install Debian Stretch" name on a Live Desktop 
+# Edit the Icon "Install Debian Bookworm" name on a Live Desktop 
 # to "Install SELKS"
 sed -i -e 's|Name\=Install Debian sid|Name\=Install SELKS|'  /usr/share/applications/debian-installer-launcher.desktop 
 
@@ -51,7 +51,7 @@ Examples:
 cd /opt/selksd/SELKS/docker/ && \
 ./easy-setup.sh --non-interactive --no-pull-containers -i tppdummy0 \
 --iA --restart-mode always --es-memory 8G && \
-docker-compose up -d 
+docker compose up -d 
 
 
 Interactive with latest updated containers and software:
@@ -64,11 +64,11 @@ Interactive with latest updated containers and software:
 Example:  
 
 cd /opt/selksd/SELKS/docker/
-docker-compose down
+docker compose down
 git pull
 ./easy-setup.sh --iA --es-memory 8G 
-docker-compose pull
-docker-compose up -d --force-recreate
+docker compose pull
+docker compose up -d --force-recreate
 
 
 Setting up dummy interface       
@@ -97,21 +97,36 @@ apt-get -y remove bison  autoconf automake libc6-dev autotools-dev libpcap-dev l
 	libx11-dev libx11-doc m4
 
 # Docker install
-apt install apt-transport-https ca-certificates curl gnupg lsb-release -y
-curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+# apt install apt-transport-https ca-certificates curl gnupg lsb-release -y
+# curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+# 
+# echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
+# $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null   
+# 
+# apt update && apt-get install -y docker-ce docker-ce-cli containerd.io docker.io
 
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
-$(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null   
+#curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+#chmod +x /usr/local/bin/docker-compose
+#ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
-apt update && apt-get install -y docker-ce docker-ce-cli containerd.io 
+# /bin/systemctl enable docker && \
+# /bin/systemctl start docker 
+# /bin/systemctl daemon-reload
 
-curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
-ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+# install docker 
+curl -fsSL https://get.docker.com -o get-docker.sh && \
+sh get-docker.sh || \
+{ echo "${red}-${reset} Docker installation failed" && exit ; }
+echo "${green}+${reset} Docker installation succeeded"
+systemctl enable docker && \
+systemctl start docker
 
-/bin/systemctl enable docker && \
-/bin/systemctl start docker 
-/bin/systemctl daemon-reload
+# install docker compose
+curl -L https://github.com/docker/compose/releases/download/v2.16.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose && \
+chmod +x /usr/local/bin/docker-compose && \
+echo "${green}+${reset} docker-compose installation succeeded" || \
+{ echo "${red}-${reset} docker-compose installation failed" && exit ; }
+
 
 ip link add tppdummy0 type dummy && \
 ip link set tppdummy0 up && \
@@ -127,24 +142,48 @@ mkdir -p /opt/selksd/SELKS/docker/tar_images
 
 apt update && apt-get install -y python3-requests
 
-mkdir -p /opt/selksd/pull/
-cd /opt/selksd/pull/ && \
-git clone https://github.com/NotGlop/docker-drag.git && \
-python3 docker-drag/docker_pull.py jasonish/suricata:master-amd64 && \
-python3 docker-drag/docker_pull.py python:3.9.5-slim-buster && \
-python3 docker-drag/docker_pull.py hello-world:latest && \
-python3 docker-drag/docker_pull.py portainer/portainer-ce:latest && \
-python3 docker-drag/docker_pull.py nginx:latest && \
-python3 docker-drag/docker_pull.py elastic/elasticsearch:7.16.1 && \
-python3 docker-drag/docker_pull.py elastic/kibana:7.16.1 && \
-python3 docker-drag/docker_pull.py elastic/logstash:7.16.1 && \
-python3 docker-drag/docker_pull.py jasonish/suricata:master-amd64 && \
-python3 docker-drag/docker_pull.py ghcr.io/stamusnetworks/scirius:master && \
-python3 docker-drag/docker_pull.py jasonish/evebox:master && \
-python3 docker-drag/docker_pull.py ghcr.io/stamusnetworks/arkimeviewer:master 
+# Example of how to pull dockers for offline build
+# the dockers need to be pulled and saved in the "dockertars" folder
+# under "staging" before the build script is run.
 
-mv /opt/selksd/pull/*.tar /opt/selksd/SELKS/docker/tar_images
-rm -rf /opt/selksd/pull/ 
+# mkdir -p /opt/selksd/pull/
+# cd /opt/selksd/pull/ && \
+# docker pull jasonish/suricata:master-amd64 && \
+# docker pull jasonish/evebox:master && \
+# docker pull python:3.9.5-slim-buster && \
+# docker pull hello-world:latest && \
+# docker pull portainer/portainer-ce:latest && \
+# docker pull nginx:latest && \
+# docker pull elastic/elasticsearch:7.17.20 && \
+# docker pull elastic/kibana:7.17.20 && \
+# docker pull elastic/logstash:7.17.20 && \
+# docker pull ghcr.io/stamusnetworks/scirius:selks && \
+# docker pull postgres:latest && \
+# docker pull busybox:latest && \
+# docker pull docker:latest && \
+# docker pull ghcr.io/stamusnetworks/arkimeviewer:master 
+# 
+# docker save -o suricata-containerimage.tar jasonish/suricata:master-amd64 && \
+# docker save -o evebox-containerimage.tar jasonish/evebox:master && \
+# docker save -o python-containerimage.tar python:3.9.5-slim-buster && \
+# docker save -o helo-world-containerimage.tar hello-world:latest && \
+# docker save -o portainer-containerimage.tar portainer/portainer-ce:latest && \
+# docker save -o nginx-containerimage.tar nginx:latest && \
+# docker save -o elastic-containerimage.tar elastic/elasticsearch:7.17.20 && \
+# docker save -o kibana-containerimage.tar elastic/kibana:7.17.20 && \
+# docker save -o logstash-containerimage.tar elastic/logstash:7.17.20 && \
+# docker save -o scirius-containerimage.tar ghcr.io/stamusnetworks/scirius:selks && \
+# docker save -o postgres-containerimage.tar postgres:latest && \
+# docker save -o busybox-containerimage.tar busybox:latest && \
+# docker save -o docker-containerimage.tar docker:latest && \
+# docker save -o arkime-containerimage.tar ghcr.io/stamusnetworks/arkimeviewer:master 
+
+# If offline docker files are downloaded and present in the folder 
+if [ ! -z "$(ls -A /opt/selksd/pull/)" ]; then
+  mv /opt/selksd/pull/*.tar /opt/selksd/SELKS/docker/tar_images
+  rm -rf /opt/selksd/pull/
+fi
+
 
 apt-get autoremove -y
 apt-get clean && \
