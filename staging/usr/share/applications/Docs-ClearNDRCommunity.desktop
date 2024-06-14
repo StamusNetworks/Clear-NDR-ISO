@@ -1,0 +1,12 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Version=1.0
+Name=Docs - Clear NDR Community
+#Icon=preferences-other
+Icon=/usr/share/icons/CNDR-Desktop-Icon-Docs.svg
+Comment=Launch-Web-Access-Docs
+Exec=firefox-esr https://docs.clearndr.io/
+Type=Application
+Categories=Application;System;
+StartupNotify=true
+Terminal=false

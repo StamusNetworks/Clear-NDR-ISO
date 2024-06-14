@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Copyright Stamus Networks, 2018
+# Copyright Stamus Networks, 2025
 # All rights reserved
 # Debian Live/Install ISO script - oss@stamus-networks.com
 #
-# Please run on Debian Stretch
+# Please run on Debian Bookworm
 
 set -ex
 
@@ -17,58 +17,57 @@ echo " alias ll='ls $LS_OPTIONS -l'" >> /root/.bashrc
 
 
 # Set up the host name
-echo "SELKS" > /etc/hostname
+echo "Clear NDR Community" > /etc/hostname
 
 # Enable the ssh banners
 sed -i -e 's|\#Banner \/etc\/issue\.net|Banner \/etc\/issue\.net|'  /etc/ssh/sshd_config
 
-# Edit the Icon "Install Debian Stretch" name on a Live Desktop 
-# to "Install SELKS"
-sed -i -e 's|Name\=Install Debian sid|Name\=Install SELKS|'  /usr/share/applications/debian-installer-launcher.desktop 
+# Edit the Icon "Install Debian Bookworm" name on a Live Desktop 
+# to "Install Clear NDR Community"
+sed -i -e 's|Name\=Install Debian sid|Name\=Install Clear NDR Community|'  /usr/share/applications/debian-installer-launcher.desktop 
 
 # First time setup
 
 cat >> /etc/skel/Desktop/FirstTimeSetup.txt <<EOF
 
 It is always recommended to follow the latest docs:        
-https://github.com/StamusNetworks/SELKS/wiki
+https://docs.clearndr.io/docs/intro
 
 Please go to the end of the brief below for production setup considerations.
 
+Minimum requirements: 2 CPUs, 8GB RAM, 50GB disk
+
 First time setup:   
 
-Non interactive, airgapped mode.
-The below command will setup the selks installation:
+Non interactive, airgapped mode will be automatically detected and the config used accordingly for setup.
+The below command will setup the Clear NDR Community installation:
 - in non-interactive mode
-- install all containers (elasticsearch/suricata/ngingx/logstash/kibana/scirius/evebox/portainer) without pulling anything from the internet
-- use the interface tppdummy0 as sniffing interface
-- use 8GB of RAM for Elasticsearch
+- install all containers without pulling anything from the internet
+- use the interface eno1 as sniffing interface
+- use 8GB of RAM for Opensearch
 - start up the installation (docker compose)
 
 Examples:   
 
+cd /opt/ClearNDRCommunity/ && \\
+sudo ./stamusctl compose init suricata.interfaces=eno1 && \\
+sudo ./stamusctl compose up -d
 
-cd /opt/selksd/SELKS/docker/ && \
-./easy-setup.sh --non-interactive --no-pull-containers -i tppdummy0 \
---iA --restart-mode always --es-memory 8G && \
-docker-compose up -d 
-
+stamusctl config set --apply opensearch.memory=8G
 
 Interactive with latest updated containers and software:
 
-- update/pull and install all containers (elasticsearch/suricata/ngingx/logstash/kibana/scirius/evebox/portainer)
+- update all containers 
 - use the interface tppdummy0 as sniffing interface
-- use 8GB of RAM for Elasticsearch, 1GB
-- start up the installation (docker compose)
+- use 8GB of RAM for Opensearch,
+- start up the installation 
 
 Example:  
 
-cd /opt/selksd/SELKS/docker/
-docker-compose down
-git pull
-./easy-setup.sh --iA --es-memory 8G 
-docker-compose pull
-docker-compose up -d --force-recreate
+cd /opt/ClearNDRCommunity/
+sudo ./stamusctl compose update
+sudo ./tamusctl compose up -d
+sudo ./stamusctl config set --apply opensearch.memory=8G
 
 
 Setting up dummy interface       
@@ -76,12 +75,12 @@ If you would not want to sniff on specific system interface and want to set up a
 
 Example:   
 
-ip link add tppdummy0 type dummy && \
-ip link set tppdummy0 up && \
-ifconfig tppdummy0 mtu 1572
+sudo ip link add tppdummy0 type dummy && \\
+sudo ip link set tppdummy0 up && \\
+sudo ifconfig tppdummy0 mtu 1572
 
 Production setup considerations:
-https://github.com/StamusNetworks/SELKS/wiki/Docker#production-setup
+https://docs.clearndr.io/docs/guides/run-in-production
 
 EOF
 
@@ -94,57 +93,46 @@ apt-get -y remove bison  autoconf automake libc6-dev autotools-dev libpcap-dev l
 	xscreensaver xscreensaver-data manpages-dev libjansson-dev \
 	ghostscript x11proto-core-dev linux-libc-dev \
 	rpm alien sane-utils libsane rpm2cpio \
-	libx11-dev libx11-doc m4
+	libx11-dev libx11-doc m4 nginx nginx-common
 
-# Docker install
-apt install apt-transport-https ca-certificates curl gnupg lsb-release -y
-curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
-$(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null   
-
-apt update && apt-get install -y docker-ce docker-ce-cli containerd.io 
-
-curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
-ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
-
-/bin/systemctl enable docker && \
-/bin/systemctl start docker 
-/bin/systemctl daemon-reload
+apt-get purge -y --autoremove libreoffice-common
 
 ip link add tppdummy0 type dummy && \
 ip link set tppdummy0 up && \
 ifconfig tppdummy0 mtu 1572 
 
-mkdir -p /opt/selksd/
+mkdir -p /opt/ClearNDRCommunity/
 
-cd /opt/selksd/ && \
-git clone https://github.com/StamusNetworks/SELKS.git && cd SELKS/docker/ && \
+cd /opt/ClearNDRCommunity/ && \
+wget https://dl.clearndr.io/stamusctl-linux-amd64 && chmod +x ./stamusctl-linux-amd64 && mv ./stamusctl-linux-amd64 stamusctl && \
 uname -a && whoami && echo $UID 
 
-mkdir -p /opt/selksd/SELKS/docker/tar_images
+mkdir -p /opt/ClearNDRCommunity/docker/tar_images
 
+#echo "export PATH=\"\/opt\/ClearNDRCommunity\/\:\$PATH\"">>/home/clearndr/.bashrc
+
+#export PATH="/Directory1:$PATH"
 apt update && apt-get install -y python3-requests
 
-mkdir -p /opt/selksd/pull/
-cd /opt/selksd/pull/ && \
-git clone https://github.com/NotGlop/docker-drag.git && \
-python3 docker-drag/docker_pull.py jasonish/suricata:master-amd64 && \
-python3 docker-drag/docker_pull.py python:3.9.5-slim-buster && \
-python3 docker-drag/docker_pull.py hello-world:latest && \
-python3 docker-drag/docker_pull.py portainer/portainer-ce:latest && \
-python3 docker-drag/docker_pull.py nginx:latest && \
-python3 docker-drag/docker_pull.py elastic/elasticsearch:7.16.1 && \
-python3 docker-drag/docker_pull.py elastic/kibana:7.16.1 && \
-python3 docker-drag/docker_pull.py elastic/logstash:7.16.1 && \
-python3 docker-drag/docker_pull.py jasonish/suricata:master-amd64 && \
-python3 docker-drag/docker_pull.py ghcr.io/stamusnetworks/scirius:master && \
-python3 docker-drag/docker_pull.py jasonish/evebox:master && \
-python3 docker-drag/docker_pull.py ghcr.io/stamusnetworks/arkimeviewer:master 
 
-mv /opt/selksd/pull/*.tar /opt/selksd/SELKS/docker/tar_images
-rm -rf /opt/selksd/pull/ 
+touch /opt/ClearNDRCommunity/docker/firstboot.cndrc
+
+cat >> /etc/systemd/system/clearndrc-firstboot.service <<EOF
+[Unit]
+Description=ClearNDR Community startup script
+#After=network.target  # Depends on network being up
+After=multi-user.target  # Depends on runlevel 2
+
+[Service]
+Type=oneshot
+ExecStart=/opt/ClearNDRCommunity/docker/firstboot.sh
+RemainAfterExit=no  # Keep the service active after the script finishes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+/bin/systemctl enable clearndrc-firstboot.service
 
 apt-get autoremove -y
 apt-get clean && \
