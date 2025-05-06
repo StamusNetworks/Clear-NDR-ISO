@@ -14,6 +14,8 @@ fix_perms() {
     chown -R suricata:suricata /var/lib/suricata
     chown -R suricata:suricata /var/log/suricata
     chown -R suricata:suricata /var/run/suricata
+
+    chown -R root:root /etc/logrotate.d/suricata
 }
 
 for src in /etc/suricata.dist/*; do
