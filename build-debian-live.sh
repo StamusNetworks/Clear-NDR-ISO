@@ -224,11 +224,12 @@ else
 
 #wget -O config/archives/packages-stamus-networks-gpg.key.chroot http://packages.stamus-networks.com/packages.selks5.stamus-networks.com.gpg.key
 
-mkdir -p config/archives/
-mkdir -p config/includes.chroot/etc/apt/keyrings/
-echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable" > config/archives/docker.list.chroot
-curl -fsSL "https://download.docker.com/linux/debian/gpg" -o config/includes.chroot/etc/apt/keyrings/docker.asc
-chmod a+r config/includes.chroot/etc/apt/keyrings/docker.asc
+#mkdir -p config/archives/
+#mkdir -p config/includes.chroot/etc/apt/keyrings/
+#echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable" > config/archives/docker.list.chroot
+#curl -fsSL "https://download.docker.com/linux/debian/gpg" -o config/includes.chroot/etc/apt/keyrings/docker.asc
+#chmod a+r config/includes.chroot/etc/apt/keyrings/docker.asc
+
 #+ sh -c chmod a+r /etc/apt/keyrings/docker.asc
 fi
 
@@ -321,10 +322,16 @@ python3-pip debian-installer-launcher live-build apt-transport-https ca-certific
 >> Stamus-Live-Build/config/package-lists/StamusNetworks-CoreSystem.list.chroot
 
 # Add system tools packages to be installed
+#echo "
+#ethtool bwm-ng iptraf htop rsync tcpreplay sysstat hping3 screen ngrep docker-ce docker-ce-cli
+#tcpflow dsniff mc python3-daemon wget curl vim bootlogd lsof libpolkit-agent-1-0  libpolkit-gobject-1-0 policykit-1 policykit-1-gnome" \
+#>> Stamus-Live-Build/config/package-lists/StamusNetworks-Tools.list.chroot
+
 echo "
-ethtool bwm-ng iptraf htop rsync tcpreplay sysstat hping3 screen ngrep docker-ce docker-ce-cli
+ethtool bwm-ng iptraf htop rsync tcpreplay sysstat hping3 screen ngrep 
 tcpflow dsniff mc python3-daemon wget curl vim bootlogd lsof libpolkit-agent-1-0  libpolkit-gobject-1-0 policykit-1 policykit-1-gnome" \
 >> Stamus-Live-Build/config/package-lists/StamusNetworks-Tools.list.chroot
+
 
 # Unless otherwise specified the ISO will be with a Desktop Environment
 if [[ -z "$GUI" ]]; then 

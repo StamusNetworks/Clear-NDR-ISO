@@ -114,15 +114,30 @@ apt-get -y remove bison  autoconf automake libc6-dev autotools-dev libpcap-dev l
 # /bin/systemctl daemon-reload
 
 # install docker 
-curl -fsSL https://get.docker.com -o get-docker.sh && \
-sh get-docker.sh || \
-{ echo "${red}-${reset} Docker installation failed" && exit ; }
-echo "${green}+${reset} Docker installation succeeded"
-systemctl enable docker && \
-systemctl start docker
+# curl -fsSL https://get.docker.com -o get-docker.sh && \
+# sh get-docker.sh || \
+# { echo "${red}-${reset} Docker installation failed" && exit ; }
+# echo "${green}+${reset} Docker installation succeeded"
+# systemctl enable docker && \
+# systemctl start docker
+
+# install docker 
+# https://docs.docker.com/engine/install/debian/
+# Add Docker's official GPG key:
+sudo apt-get -y update && sudo apt-get -y install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get -y update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 # install docker compose
-curl -L https://github.com/docker/compose/releases/download/v2.16.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose && \
+curl -L https://github.com/docker/compose/releases/download/v2.37.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose && \
 chmod +x /usr/local/bin/docker-compose && \
 echo "${green}+${reset} docker-compose installation succeeded" || \
 { echo "${red}-${reset} docker-compose installation failed" && exit ; }
@@ -134,8 +149,11 @@ ifconfig tppdummy0 mtu 1572
 
 mkdir -p /opt/selksd/
 
+#cd /opt/selksd/ && \
+#git clone https://github.com/StamusNetworks/SELKS.git && cd SELKS/docker/ && \
+
 cd /opt/selksd/ && \
-git clone https://github.com/StamusNetworks/SELKS.git && cd SELKS/docker/ && \
+wget https://dl.clearndr.io/stamusctl-linux-amd64 && chmod +x ./stamusctl-linux-amd64 && mv ./stamusctl-linux-amd64 stamusctl && \
 uname -a && whoami && echo $UID 
 
 mkdir -p /opt/selksd/SELKS/docker/tar_images
@@ -145,6 +163,41 @@ apt update && apt-get install -y python3-requests
 # Example of how to pull dockers for offline build
 # the dockers need to be pulled and saved in the "dockertars" folder
 # under "staging" before the build script is run.
+
+
+
+mkdir -p /opt/selksd/pull/
+cd /opt/selksd/pull/ && \
+git clone https://github.com/NotGlop/docker-drag.git && \
+python3 docker-drag/docker_pull.py ghcr.io/stamusnetworks/scirius:clear-ndr-rc2 && \
+python3 docker-drag/docker_pull.py opensearchproject/opensearch:2.18.0 && \
+python3 docker-drag/docker_pull.py ghcr.io/stamusnetworks/stamus-images/opensearch-dashboards:2.18 && \
+python3 docker-drag/docker_pull.py ghcr.io/stamusnetworks/stamus-images/fluentd:1.16 && \
+python3 docker-drag/docker_pull.py jasonish/suricata:7.0 && \
+python3 docker-drag/docker_pull.py postgres:17 && \
+python3 docker-drag/docker_pull.py rabbitmq:3-management-alpine && \
+python3 docker-drag/docker_pull.py jasonish/evebox:master && \
+python3 docker-drag/docker_pull.py ghcr.io/stamusnetworks/stamus-images/arkime:5.5 && \
+python3 docker-drag/docker_pull.py busybox && \
+python3 docker-drag/docker_pull.py docker:latest && \
+python3 docker-drag/docker_pull.py hashicorp/terraform:1.9 && \
+python3 docker-drag/docker_pull.py curlimages/curl:8.13.0 && \
+python3 docker-drag/docker_pull.py nginx:1.27 
+
+# 
+# python3 docker-drag/docker_pull.py jasonish/suricata:master-amd64 && \
+# python3 docker-drag/docker_pull.py python:3.9.5-slim-buster && \
+# python3 docker-drag/docker_pull.py hello-world:latest && \
+# python3 docker-drag/docker_pull.py portainer/portainer-ce:latest && \
+# python3 docker-drag/docker_pull.py nginx:latest && \
+# python3 docker-drag/docker_pull.py elastic/elasticsearch:7.16.1 && \
+# python3 docker-drag/docker_pull.py elastic/kibana:7.16.1 && \
+# python3 docker-drag/docker_pull.py elastic/logstash:7.16.1 && \
+# python3 docker-drag/docker_pull.py jasonish/suricata:master-amd64 && \
+# python3 docker-drag/docker_pull.py ghcr.io/stamusnetworks/scirius:master && \
+# python3 docker-drag/docker_pull.py jasonish/evebox:master && \
+# python3 docker-drag/docker_pull.py ghcr.io/stamusnetworks/arkimeviewer:master 
+
 
 # mkdir -p /opt/selksd/pull/
 # cd /opt/selksd/pull/ && \
