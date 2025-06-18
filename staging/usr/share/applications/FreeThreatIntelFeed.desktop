@@ -1,0 +1,12 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Version=1.0
+Name=Free Threat Intel Feed
+#Icon=preferences-other
+Icon=/usr/share/icons/CNDR-Desktop-Icon-NRD-Intel.svg
+Comment=Launch-Web-Access-TIFeed
+Exec=firefox-esr https://www.stamus-networks.com/stamus-labs/subscribe-to-threat-intel-feed
+Type=Application
+Categories=Application;System;
+StartupNotify=true
+Terminal=false

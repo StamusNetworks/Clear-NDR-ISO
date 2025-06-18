@@ -1,0 +1,12 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Version=1.0
+Name=Stamus Labs
+#Icon=preferences-other
+Icon=/usr/share/icons/CNDR-Desktop-Icon-Labs.svg
+Comment=Launch-Web-Access-Stamus-Labs
+Exec=firefox-esr https://www.stamus-networks.com/stamus-labs/
+Type=Application
+Categories=Application;System;
+StartupNotify=true
+Terminal=false

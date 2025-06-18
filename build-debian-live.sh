@@ -25,8 +25,8 @@ OPTIONS:
    -g      GUI option - can be "no-desktop"
    -p      Add package(s) to the build - can be one-package or "package1 package2 package3...." (should be confined to up to 10 packages)
    -k      Kernel option - can be the stable standard version of the kernel you wish to deploy - 
-           aka you can choose any kernel "5.x.x" you want.
-           Example: "6.5" or "5.15.6" or "5.10.11" 
+           aka you can choose any kernel "5/6.x.x" you want.
+           Example: "6.5" or "5.15.6" or "6.10.11"
            
            More info on kernel versions and support:
            https://www.kernel.org/
@@ -41,19 +41,19 @@ OPTIONS:
    
    EXAMPLE (customizations): 
    
-   ./build-debian-live.sh -k 5.10 
+   ./build-debian-live.sh -k 6.10
    The example above will build a SELKS Debian Bookworm 64 bit distro with kernel ver 5.10
    
-   ./build-debian-live.sh -k 5.15.11 -p one-package
-   The example above will build a SELKS Debian Bookworm 64 bit distro with kernel ver 5.15.11
+   ./build-debian-live.sh -k 6.15.11 -p one-package
+   The example above will build a SELKS Debian Bookworm 64 bit distro with kernel ver 6.15.11
    and add the extra package named  "one-package" to the build.
    
-   ./build-debian-live.sh -k 5.15.11 -g no-desktop -p one-package
-   The example above will build a SELKS Debian Bookworm 64 bit distro, no desktop with kernel ver 5.15.11
+   ./build-debian-live.sh -k 6.15.11 -g no-desktop -p one-package
+   The example above will build a SELKS Debian Bookworm 64 bit distro, no desktop with kernel ver 6.15.11
    and add the extra package named  "one-package" to the build.
    
-   ./build-debian-live.sh -k 5.15 -g no-desktop -p "package1 package2 package3"
-   The example above will build a SELKS Debian Bookworm 64 bit distro, no desktop with kernel ver 4.16
+   ./build-debian-live.sh -k 6.15 -g no-desktop -p "package1 package2 package3"
+   The example above will build a SELKS Debian Bookworm 64 bit distro, no desktop with kernel ver 6.15
    and add the extra packages named  "package1", "package2", "package3" to the build.
    
    
@@ -82,12 +82,12 @@ do
              ;;
          k)
              KERNEL_VER=$OPTARG
-             if [[ "$KERNEL_VER" =~ ^[3-5]\.[0-9]+?\.?[0-9]+$ ]];
+             if [[ "$KERNEL_VER" =~ ^[5-6]\.[0-9]+?\.?[0-9]+$ ]];
              then
                echo -e "\n Kernel version set to ${KERNEL_VER} \n"
              else
                echo -e "\n Please check the option's spelling "
-               echo -e " Also - only kernel versions >3.0 are supported !! \n"
+               echo -e " Also - only kernel versions >5.0 are supported !! \n"
                usage
                exit 1;
              fi
@@ -119,6 +119,9 @@ fi
 #
 
 mkdir -p Stamus-Live-Build
+
+#if presnet make sure we clean up previous state
+cd Stamus-Live-Build/ && lb clean --all && cd ../
 
 if [[ -n "$KERNEL_VER" ]]; 
 then 
@@ -224,13 +227,12 @@ else
 
 #wget -O config/archives/packages-stamus-networks-gpg.key.chroot http://packages.stamus-networks.com/packages.selks5.stamus-networks.com.gpg.key
 
-#mkdir -p config/archives/
-#mkdir -p config/includes.chroot/etc/apt/keyrings/
-#echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable" > config/archives/docker.list.chroot
-#curl -fsSL "https://download.docker.com/linux/debian/gpg" -o config/includes.chroot/etc/apt/keyrings/docker.asc
-#chmod a+r config/includes.chroot/etc/apt/keyrings/docker.asc
+mkdir -p config/includes.chroot/etc/apt/keyrings/
+install -m 0755 -d config/includes.chroot/etc/apt/keyrings/
+echo "deb [arch=amd64] https://download.docker.com/linux/debian bookworm stable" > config/archives/docker.list.chroot
+curl -fsSL "https://download.docker.com/linux/debian/gpg" -o config/archives/docker.key.chroot
+ls -lh config/archives/docker.key.chroot
 
-#+ sh -c chmod a+r /etc/apt/keyrings/docker.asc
 fi
 
 # Create dirs if not existing for the custom config files
@@ -253,6 +255,9 @@ mkdir -p config/includes.chroot/var/backups/
 mkdir -p config/includes.chroot/etc/apt/
 mkdir -p config/includes.chroot/usr/share/polkit-1/actions/
 mkdir -p config/includes.chroot/usr/share/polkit-1/rules.d/
+mkdir -p config/includes.chroot/opt/ClearNDRCommunity/docker/
+mkdir -p config/includes.chroot/opt/ClearNDRCommunity/docker/tar_images/
+mkdir -p config/includes.chroot/usr/share/icons/
 
 cd ../
 
@@ -265,9 +270,9 @@ cp LICENSE Stamus-Live-Build/config/includes.chroot/etc/skel/
 cp LICENSE Stamus-Live-Build/config/includes.chroot/root/Desktop/
 
 # cp Scirius desktop shortcuts
-cp staging/usr/share/applications/Scirius.desktop Stamus-Live-Build/config/includes.chroot/etc/skel/Desktop/
+#cp staging/usr/share/applications/Scirius.desktop Stamus-Live-Build/config/includes.chroot/etc/skel/Desktop/
 # Same as above but for root
-cp staging/usr/share/applications/Scirius.desktop Stamus-Live-Build/config/includes.chroot/root/Desktop/
+#cp staging/usr/share/applications/Scirius.desktop Stamus-Live-Build/config/includes.chroot/root/Desktop/
 
 # Logrotate config for eve.json
 cp staging/etc/logrotate.d/suricata Stamus-Live-Build/config/includes.chroot/etc/logrotate.d/
@@ -279,10 +284,42 @@ cp staging/splash.png Stamus-Live-Build/config/includes.binary/isolinux/
 cp staging/wallpaper/joy-wallpaper_1920x1080.svg Stamus-Live-Build/config/includes.chroot/etc/alternatives/desktop-background
 #cp staging/wallpaper/joy-wallpaper_1920x1080.svg Stamus-Live-Build/config/includes.chroot/usr/share/xfce4/backdrops/
 
-# Copy Docker tars if building offline ISO
-if [ ! -z "$(ls -A staging/dockertars/)" ]; then
-  mkdir -p Stamus-Live-Build/config/includes.chroot/opt/selksd/pull/ 
-  cp -r staging/dockertars/*.tar Stamus-Live-Build/config/includes.chroot/opt/selksd/pull/
+# Copy Docker tars for building offline ISO
+if [ -z "$(ls -A staging/dockers/)" ]; then
+  docker pull ghcr.io/stamusnetworks/stamusctl-templates/clearndr:latest && \
+  docker pull rabbitmq:3-management-alpine && \
+  docker pull ghcr.io/stamusnetworks/stamus-images/opensearch-dashboards:2.18 && \
+  docker pull opensearchproject/opensearch:2.18.0 && \
+  docker pull ghcr.io/stamusnetworks/scirius:clear-ndr-rc3 && \
+  docker pull ghcr.io/stamusnetworks/stamus-images/fluentd:1.16 && \
+  docker pull jasonish/suricata:7.0 && \
+  docker pull postgres:17 && \
+  docker pull jasonish/evebox:master && \
+  docker pull ghcr.io/stamusnetworks/stamus-images/arkime:5.5 && \
+  docker pull busybox && \
+  docker pull docker:latest && \
+  docker pull hashicorp/terraform:1.9 && \
+  docker pull curlimages/curl:8.13.0 && \
+  docker pull nginx:1.27
+  
+  docker save -o staging/dockers/stamusnetworks_stamus-images_clearndr_templates_latest.tar ghcr.io/stamusnetworks/stamusctl-templates/clearndr:latest && \
+  docker save -o staging/dockers/stamusnetworks_stamus-images_3-management-alpine.tar rabbitmq:3-management-alpine && \
+  docker save -o staging/dockers/stamusnetworks_stamus-images_opensearch-dashboards.tar ghcr.io/stamusnetworks/stamus-images/opensearch-dashboards:2.18 && \
+  docker save -o staging/dockers/stamusnetworks_stamus-images_opensearch2.18.0.tar opensearchproject/opensearch:2.18.0 && \
+  docker save -o staging/dockers/stamusnetworks_stamus-images_clear-ndr-rc3.tar ghcr.io/stamusnetworks/scirius:clear-ndr-rc3 && \
+  docker save -o staging/dockers/stamusnetworks_stamus-images_fluentd.tar ghcr.io/stamusnetworks/stamus-images/fluentd:1.16 && \
+  docker save -o staging/dockers/stamusnetworks_stamus-images_suricata.tar jasonish/suricata:7.0 && \
+  docker save -o staging/dockers/stamusnetworks_stamus-images_postgres.tar postgres:17 && \
+  docker save -o staging/dockers/stamusnetworks_stamus-images_evebox-master.tar jasonish/evebox:master && \
+  docker save -o staging/dockers/stamusnetworks_stamus-images_arkime.tar ghcr.io/stamusnetworks/stamus-images/arkime:5.5 && \
+  docker save -o staging/dockers/stamusnetworks_stamus-images_busybox.tar busybox && \
+  docker save -o staging/dockers/stamusnetworks_stamus-images_docker.tar docker:latest && \
+  docker save -o staging/dockers/stamusnetworks_stamus-images_terraform.tar hashicorp/terraform:1.9 && \
+  docker save -o staging/dockers/stamusnetworks_stamus-images_curl.tar curlimages/curl:8.13.0 && \
+  docker save -o staging/dockers/stamusnetworks_stamus-images_nginx.tar nginx:1.27
+  cp staging/dockers/*.tar Stamus-Live-Build/config/includes.chroot/opt/ClearNDRCommunity/docker/tar_images/
+else
+  cp staging/dockers/*.tar Stamus-Live-Build/config/includes.chroot/opt/ClearNDRCommunity/docker/tar_images/
 fi
 
 # Copy banners
@@ -293,10 +330,21 @@ cp staging/etc/issue.net Stamus-Live-Build/config/includes.chroot/etc/
 cp staging/etc/profile.d/pythonpath.sh Stamus-Live-Build/config/includes.chroot/etc/profile.d/
 
 # Copy evebox desktop shortcut.
-cp staging/usr/share/applications/Evebox.desktop Stamus-Live-Build/config/includes.chroot/etc/skel/Desktop/
+#cp staging/usr/share/applications/Evebox.desktop Stamus-Live-Build/config/includes.chroot/etc/skel/Desktop/
 
 # Same as above but for root
-cp staging/usr/share/applications/Evebox.desktop Stamus-Live-Build/config/includes.chroot/root/Desktop/
+#cp staging/usr/share/applications/Evebox.desktop Stamus-Live-Build/config/includes.chroot/root/Desktop/
+
+# Stamus Desktop shortcuts
+cp staging/usr/share/applications/ClearNDRCommunity.desktop Stamus-Live-Build/config/includes.chroot/etc/skel/Desktop/
+cp staging/usr/share/applications/ClearNDRCommunity.desktop Stamus-Live-Build/config/includes.chroot/root/Desktop/
+cp staging/usr/share/applications/Docs-ClearNDRCommunity.desktop Stamus-Live-Build/config/includes.chroot/etc/skel/Desktop/
+cp staging/usr/share/applications/Docs-ClearNDRCommunity.desktop Stamus-Live-Build/config/includes.chroot/root/Desktop/
+cp staging/usr/share/applications/FreeThreatIntelFeed.desktop Stamus-Live-Build/config/includes.chroot/etc/skel/Desktop/
+cp staging/usr/share/applications/FreeThreatIntelFeed.desktop Stamus-Live-Build/config/includes.chroot/root/Desktop/
+cp staging/usr/share/applications/StamusLabs.desktop Stamus-Live-Build/config/includes.chroot/etc/skel/Desktop/
+cp staging/usr/share/applications/StamusLabs.desktop Stamus-Live-Build/config/includes.chroot/root/Desktop/
+
 
 # copy polkit policies for selks-user to be able to execute as root 
 # first time setup scripts
@@ -305,10 +353,13 @@ cp staging/usr/share/polkit-1/actions/org.stamusnetworks.setupidsinterface.polic
 cp staging/usr/share/polkit-1/actions/org.stamusnetworks.update.policy Stamus-Live-Build/config/includes.chroot/usr/share/polkit-1/actions/
 cp staging/usr/share/polkit-1/rules.d/org.stamusnetworks.rules Stamus-Live-Build/config/includes.chroot/usr/share/polkit-1/rules.d/
 
+# setup offline docker loading folder
+cp staging/config/hooks/live/firstboot.sh Stamus-Live-Build/config/includes.chroot/opt/ClearNDRCommunity/docker/
+
 # Add core system packages to be installed
 echo "
 
-libpcre3 libpcre3-dbg libpcre3-dev ntp
+libpcre3 libpcre3-dbg libpcre3-dev ntp ca-certificates curl
 build-essential autoconf automake libtool libpcap-dev libnet1-dev 
 libyaml-0-2 libyaml-dev zlib1g zlib1g-dev libcap-ng-dev libcap-ng0 
 make flex bison git git-core libmagic-dev libnuma-dev pkg-config
@@ -328,9 +379,14 @@ python3-pip debian-installer-launcher live-build apt-transport-https ca-certific
 #>> Stamus-Live-Build/config/package-lists/StamusNetworks-Tools.list.chroot
 
 echo "
-ethtool bwm-ng iptraf htop rsync tcpreplay sysstat hping3 screen ngrep 
+ethtool bwm-ng iptraf htop rsync tcpreplay sysstat hping3 screen ngrep docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 tcpflow dsniff mc python3-daemon wget curl vim bootlogd lsof libpolkit-agent-1-0  libpolkit-gobject-1-0 policykit-1 policykit-1-gnome" \
 >> Stamus-Live-Build/config/package-lists/StamusNetworks-Tools.list.chroot
+
+# echo "
+# ethtool bwm-ng iptraf htop rsync tcpreplay sysstat hping3 screen ngrep
+# tcpflow dsniff mc python3-daemon wget curl vim bootlogd lsof libpolkit-agent-1-0  libpolkit-gobject-1-0 policykit-1 policykit-1-gnome" \
+# >> Stamus-Live-Build/config/package-lists/StamusNetworks-Tools.list.chroot
 
 
 # Unless otherwise specified the ISO will be with a Desktop Environment
@@ -342,10 +398,21 @@ if [[ -z "$GUI" ]]; then
   
   # Copy the menu shortcuts for Kibana and Scirius
   # this is for the lxde menu widgets - not the desktop shortcuts
-  cp staging/usr/share/applications/Scirius.desktop Stamus-Live-Build/config/includes.chroot/usr/share/applications/
-
+  #cp staging/usr/share/applications/Scirius.desktop Stamus-Live-Build/config/includes.chroot/usr/share/applications/
   # For Evebox to.
-  cp staging/usr/share/applications/Evebox.desktop Stamus-Live-Build/config/includes.chroot/usr/share/applications/
+  #cp staging/usr/share/applications/Evebox.desktop Stamus-Live-Build/config/includes.chroot/usr/share/applications/
+  cp staging/usr/share/applications/ClearNDRCommunity.desktop Stamus-Live-Build/config/includes.chroot/usr/share/applications/
+  cp staging/usr/share/applications/Docs-ClearNDRCommunity.desktop Stamus-Live-Build/config/includes.chroot/usr/share/applications/
+  cp staging/usr/share/applications/FreeThreatIntelFeed.desktop Stamus-Live-Build/config/includes.chroot/usr/share/applications/
+  cp staging/usr/share/applications/StamusLabs.desktop Stamus-Live-Build/config/includes.chroot/usr/share/applications/
+  # Copy the icons
+  cp staging/usr/share/applications/StamusLabs.desktop Stamus-Live-Build/config/includes.chroot/usr/share/icons/
+  cp staging/usr/share/icons/CNDR-Desktop-Icon-Docs.svg Stamus-Live-Build/config/includes.chroot/usr/share/icons/
+  cp staging/usr/share/icons/CNDR-Desktop-Icon-Labs.svg Stamus-Live-Build/config/includes.chroot/usr/share/icons/
+  cp staging/usr/share/icons/CNDR-Desktop-Icon-Launch.svg Stamus-Live-Build/config/includes.chroot/usr/share/icons/
+  cp staging/usr/share/icons/CNDR-Desktop-Icon-NRD-Intel.svg Stamus-Live-Build/config/includes.chroot/usr/share/icons/
+
+  
 fi
 
 # If -p (add packages) option is used - add those packages to the build
@@ -380,18 +447,20 @@ fi
 
 # Debian installer preseed.cfg
 echo "
-d-i netcfg/hostname string SELKS
+d-i netcfg/hostname string ClearNDR
 
-d-i passwd/user-fullname string selks-user User
-d-i passwd/username string selks-user
-d-i passwd/user-password password selks-user
-d-i passwd/user-password-again password selks-user
+d-i passwd/user-fullname string clearndr User
+d-i passwd/username string clearndr
+d-i passwd/user-password password clearndr
+d-i passwd/user-password-again password clearndr
 d-i passwd/user-default-groups string audio cdrom floppy video dip plugdev scanner bluetooth netdev sudo
 
-d-i passwd/root-password password StamusNetworks
-d-i passwd/root-password-again password StamusNetworks
+d-i passwd/root-password password clearndr
+d-i passwd/root-password-again password clearndr
 " > Stamus-Live-Build/config/includes.installer/preseed.cfg
 
 # Build the ISO
 cd Stamus-Live-Build && ( lb build 2>&1 | tee build.log )
-mv live-image-amd64.hybrid.iso SELKS.iso
+mv live-image-amd64.hybrid.iso ClearNDR.iso && lb clean --all
+
+
