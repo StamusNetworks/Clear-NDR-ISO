@@ -413,7 +413,7 @@ libnetfilter-queue-dev libnetfilter-queue1 libnfnetlink-dev libnfnetlink0
 libjansson-dev libjansson4 libnss3-dev libnspr4-dev libgeoip1 libgeoip-dev
 rsync mc python3-daemon libnss3-tools curl net-tools
 python3-cryptography libgmp10 libyaml-0-2 python3-simplejson python3-pygments
-python3-yaml ssh sudo tcpdump nginx openssl jq patch
+python3-yaml ssh sudo tcpdump openssl jq patch
 python3-pip debian-installer-launcher live-build apt-transport-https ca-certificates
  " \
 >> Stamus-Live-Build/config/package-lists/StamusNetworks-CoreSystem.list.chroot
