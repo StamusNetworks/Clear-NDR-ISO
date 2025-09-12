@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright Stamus Networks, 2024
+# Copyright Stamus Networks, 2014-2025
 # All rights reserved
 # Debian Live/Install ISO script - oss@stamus-networks.com
 #
