@@ -4,7 +4,7 @@
 # All rights reserved
 # Debian Live/Install ISO script - oss@stamus-networks.com
 #
-# Please RUN ON Debian Bullseye !!!
+# Please RUN ON Debian Bookworm !!!
 
 set -e
 
@@ -15,7 +15,7 @@ cat << EOF
 usage: $0 options
 
 #####################################
-#!!! RUN on Debian Bullseye ONLY !!!#
+#!!! RUN on Debian Bookworm ONLY !!!#
 #####################################
 
 SELKS build your own ISO options
